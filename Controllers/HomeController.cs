@@ -34,17 +34,25 @@ namespace cmcs.Controllers
             return View(claims);
         }
 
-
-        public IActionResult MyClaims(int userId)
+        [HttpGet("Home/MyClaims")]
+        public IActionResult MyClaims()
         {
+            var userEmail = HttpContext.Session.GetString("UserEmail");
+            var user = _context.Users.FirstOrDefault(u => u.Email == userEmail);
+
+            if (user == null)
+            {
+                TempData["Error"] = "User not found. Please log in again.";
+                return RedirectToAction("Index");
+            }
+
             var claims = _context.Claims
-                .Include(c => c.ClaimFiles)
-                .Where(c => c.UserId == userId)
+                .Where(c => c.UserId == user.UserId)
                 .ToList();
 
-            ViewBag.UserId = userId;
             return View(claims);
         }
+
 
         [HttpPost]
         public IActionResult Register(User user)
@@ -68,15 +76,14 @@ namespace cmcs.Controllers
                 return View("Index");
             }
 
-            // Save to session
             HttpContext.Session.SetString("UserEmail", user.Email);
 
-            // Redirect based on role
             if (user.Role == "Lecturer")
                 return RedirectToAction("LecturerForm", "Home");
-
-            return RedirectToAction("CoordinatorClaims", "Home");
+            else
+                return RedirectToAction("CoordinatorClaims", "Home");
         }
+
 
     }
 }

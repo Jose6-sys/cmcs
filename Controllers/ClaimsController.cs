@@ -21,7 +21,7 @@ namespace cmcs.Controllers
         [HttpPost]
         public IActionResult SubmitClaim(double hoursWorked, double hourlyRate, string notes, IFormFile file)
         {
-            // Get the logged-in user's email or ID from the session
+            // Get the logged-in user's email from session
             var userEmail = HttpContext.Session.GetString("UserEmail");
             var user = _context.Users.FirstOrDefault(u => u.Email == userEmail);
 

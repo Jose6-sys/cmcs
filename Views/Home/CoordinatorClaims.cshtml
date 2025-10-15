@@ -31,8 +31,8 @@
             <tr>
                 <td>@(claim.User != null ? claim.User.FullName : "Unknown Lecturer")</td>
                 <td>@claim.HoursWorked</td>
-                <td>R@claim.HourlyRate</td>
-                <td>R@total</td>
+                <td>@($"R {claim.HourlyRate:F2}")</td>
+                <td>@($"R {total:F2}")</td>
                 <td class="text-center">
                     <span class="@statusClass">@claim.Status</span>
                 </td>
