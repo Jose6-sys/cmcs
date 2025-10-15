@@ -1,50 +1,85 @@
-using System.Diagnostics;
+using System.Linq;
 using cmcs.Models;
+
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace cmcs.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
+        private readonly ApplicationDbContext _context;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ApplicationDbContext context)
         {
-            _logger = logger;
+            _context = context;
         }
 
-        public IActionResult Index()
+        public IActionResult Index() => View(); // Login view
+
+        public IActionResult Register() => View();
+
+        public IActionResult LecturerForm()
         {
             return View();
         }
 
-        public IActionResult Privacy()
+        public IActionResult CoordinatorClaims()
         {
-            return View();
-        }
-        public IActionResult register()
-        {
-            return View();
-        }
-        public IActionResult login()
-        {
-            return View();
-        }
-        public IActionResult SubmitClaim()
-        {
-            return View();
-        }
-        public IActionResult coordinator()
-        {
-            return View();
+            var claims = _context.Claims
+                .Include(c => c.User)
+                .Include(c => c.ClaimFiles) //  include files
+                .ToList();
+
+            return View(claims);
         }
 
 
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
+        public IActionResult MyClaims(int userId)
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            var claims = _context.Claims
+                .Include(c => c.ClaimFiles)
+                .Where(c => c.UserId == userId)
+                .ToList();
+
+            ViewBag.UserId = userId;
+            return View(claims);
         }
+
+        [HttpPost]
+        public IActionResult Register(User user)
+        {
+            if (ModelState.IsValid)
+            {
+                _context.Users.Add(user);
+                _context.SaveChanges();
+                return RedirectToAction("Index");
+            }
+            return View(user);
+        }
+
+        [HttpPost]
+        public IActionResult Login(string email, string password)
+        {
+            var user = _context.Users.FirstOrDefault(u => u.Email == email && u.Password == password);
+            if (user == null)
+            {
+                ViewBag.Error = "Invalid email or password.";
+                return View("Index");
+            }
+
+            // Save to session
+            HttpContext.Session.SetString("UserEmail", user.Email);
+
+            // Redirect based on role
+            if (user.Role == "Lecturer")
+                return RedirectToAction("LecturerForm", "Home");
+
+            return RedirectToAction("CoordinatorClaims", "Home");
+        }
+
     }
 }
+
+
+

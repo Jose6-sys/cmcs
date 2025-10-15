@@ -1,0 +1,68 @@
+﻿@model IEnumerable<cmcs.Models.Claim>
+@{
+    ViewData["Title"] = "Coordinator Claim Management";
+}
+
+<h2 class="mb-4 text-center">Coordinator Claim Management</h2>
+
+<table class="table table-bordered table-hover align-middle shadow-sm">
+    <thead class="table-primary text-center">
+        <tr>
+            <th>Lecturer</th>
+            <th>Hours Worked</th>
+            <th>Hourly Rate</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Notes</th>
+            <th>Supporting File</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var claim in Model)
+        {
+            var total = claim.HoursWorked * claim.HourlyRate;
+            string statusClass = claim.Status switch
+            {
+                "Approved" => "badge bg-success",
+                "Rejected" => "badge bg-danger",
+                _ => "badge bg-warning text-dark"
+            };
+            <tr>
+                <td>@(claim.User != null ? claim.User.FullName : "Unknown Lecturer")</td>
+                <td>@claim.HoursWorked</td>
+                <td>R@claim.HourlyRate</td>
+                <td>R@total</td>
+                <td class="text-center">
+                    <span class="@statusClass">@claim.Status</span>
+                </td>
+                <td>@(string.IsNullOrEmpty(claim.Notes) ? "—" : claim.Notes)</td>
+                <td class="text-center">
+                    @if (claim.ClaimFiles != null && claim.ClaimFiles.Any())
+                    {
+                        <a class="btn btn-outline-info btn-sm"
+                           href="@claim.ClaimFiles.First().FilePath"
+                           target="_blank">
+                            📎 View File
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">No File</span>
+                    }
+                </td>
+                <td>
+                    <form method="post" asp-controller="Claims" asp-action="UpdateStatus" class="d-flex flex-column gap-1">
+                        <input type="hidden" name="claimId" value="@claim.ClaimId" />
+                        <select name="status" class="form-select form-select-sm">
+                            <option value="Pending" selected="@(claim.Status == "Pending" ? "selected" : null)">Pending</option>
+                            <option value="Approved" selected="@(claim.Status == "Approved" ? "selected" : null)">Approved</option>
+                            <option value="Rejected" selected="@(claim.Status == "Rejected" ? "selected" : null)">Rejected</option>
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-primary">Update</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

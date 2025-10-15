@@ -1,0 +1,51 @@
+﻿@model IEnumerable<cmcs.Models.Claim>
+@{
+    ViewData["Title"] = "My Submitted Claims";
+}
+
+<h2 class="mb-4 text-center">My Submitted Claims</h2>
+
+<div class="row">
+    @if (!Model.Any())
+    {
+        <div class="col-12 text-center text-muted">
+            <p>You have not submitted any claims yet.</p>
+        </div>
+    }
+    else
+    {
+        foreach (var claim in Model)
+        {
+            var total = claim.HoursWorked * claim.HourlyRate;
+            string statusClass = claim.Status == "Approved" ? "bg-success text-white"
+            : claim.Status == "Rejected" ? "bg-danger text-white"
+            : "bg-warning text-dark";
+            <div class="col-md-4 mb-4">
+                <div class="card shadow-lg border-0 rounded-3">
+                    <div class="card-header @statusClass fw-bold">
+                        Status: @claim.Status
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Hours Worked:</strong> @claim.HoursWorked</p>
+                        <p><strong>Hourly Rate:</strong> R@claim.HourlyRate</p>
+                        <p><strong>Total:</strong> R@total</p>
+                        <p><strong>Notes:</strong> @(string.IsNullOrEmpty(claim.Notes) ? "—" : claim.Notes)</p>
+
+                        @if (claim.ClaimFiles != null && claim.ClaimFiles.Any())
+                        {
+                            <a href="@claim.ClaimFiles.First().FilePath" target="_blank" class="btn btn-outline-info btn-sm">View File</a>
+                        }
+                        else
+                        {
+                            <span class="text-muted">No file uploaded</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<div class="text-center mt-4">
+    <a asp-action="LecturerForm" asp-route-userId="@ViewBag.UserId" class="btn btn-primary">Submit Another Claim</a>
+</div>
