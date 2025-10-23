@@ -16,7 +16,7 @@ namespace cmcs.Models
         [Required]
         public double HourlyRate { get; set; }
 
-        public string Notes { get; set; }
+        public string? Notes { get; set; }
 
         public string Status { get; set; } = "Pending";
 

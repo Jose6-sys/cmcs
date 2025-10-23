@@ -21,7 +21,7 @@ namespace cmcs.Controllers
         [HttpPost]
         public IActionResult SubmitClaim(double hoursWorked, double hourlyRate, string notes, IFormFile file)
         {
-            // Get the logged-in user's email from session
+            // Get logged-in user's email from session
             var userEmail = HttpContext.Session.GetString("UserEmail");
             var user = _context.Users.FirstOrDefault(u => u.Email == userEmail);
 
@@ -31,6 +31,29 @@ namespace cmcs.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
+            //  Validate file if uploaded
+            if (file != null)
+            {
+                const long maxFileSize = 20 * 1024 * 1024; // 20MB
+                var allowedExtensions = new[] { ".pdf", ".docx", ".xlsx" };
+                var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+                // File size check
+                if (file.Length > maxFileSize)
+                {
+                    TempData["Error"] = "File size cannot exceed 20 MB.";
+                    return RedirectToAction("MyClaims", "Home");
+                }
+
+                // File type check
+                if (!allowedExtensions.Contains(fileExtension))
+                {
+                    TempData["Error"] = "Only PDF, DOCX, and XLSX files are allowed.";
+                    return RedirectToAction("MyClaims", "Home");
+                }
+            }
+
+            //  Create claim
             var claim = new Claim
             {
                 UserId = user.UserId,
@@ -43,11 +66,15 @@ namespace cmcs.Controllers
             _context.Claims.Add(claim);
             _context.SaveChanges();
 
+            //  Handle file upload if valid
             if (file != null)
             {
                 string uploads = Path.Combine(_env.WebRootPath, "uploads");
                 Directory.CreateDirectory(uploads);
-                string filePath = Path.Combine(uploads, file.FileName);
+
+                // Generate a unique filename
+                string uniqueFileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+                string filePath = Path.Combine(uploads, uniqueFileName);
 
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {
@@ -58,8 +85,9 @@ namespace cmcs.Controllers
                 {
                     ClaimId = claim.ClaimId,
                     FileName = file.FileName,
-                    FilePath = "/uploads/" + file.FileName
+                    FilePath = "/uploads/" + uniqueFileName
                 };
+
                 _context.ClaimFiles.Add(claimFile);
                 _context.SaveChanges();
             }
@@ -67,6 +95,7 @@ namespace cmcs.Controllers
             TempData["Success"] = "Claim submitted successfully!";
             return RedirectToAction("MyClaims", "Home");
         }
+
 
         //  Used by coordinator/manager to update claim status
         [HttpPost]
